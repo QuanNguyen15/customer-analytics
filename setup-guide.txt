@@ -1,0 +1,31 @@
+
+-b1: khởi tạo container hive4
+
+docker run -d --platform linux/amd64 -p 10000:10000 -p 10002:10002 --env SERVICE_NAME=hiveserver2 --name hive4 apache/hive:4.0.0
+
+-b2: copy file dữ liệu vào folder trong container
+
+docker cp data\processed\2019-Oct.csv hive4:/mnt
+
+-b3: thực thi câu lệnh truy cập vào hive4 beeline
+
+docker exec -it hive4 beeline -u 'jdbc:hive2://localhost:10000/’
+
+-b4: tạo db retail_db
+CREATE DATABASE IF NOT EXISTS retail_db;
+USE retail_db;
+
+kiểm tra db: show databases;
+
+
+-b5: tạo bảng ecommerce_events
+CREATE TABLE IF NOT EXISTS ecommerce_events(  event_time TIMESTAMP,  event_type STRING,  product_id BIGINT,  category_id BIGINT,  category_code STRING,  brand STRING,  price DECIMAL(10, 2),  user_id BIGINT,  user_session STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS TEXTFILE;
+
+- b6: đẩy data từ csv vào bảng vừa tạo 
+
+LOAD DATA LOCAL INPATH '/mnt/2019-Oct.csv ' INTO TABLE ecommerce_events;
+
+
+
+Quản lý kết nối và các thuộc tính kết nối 
+ !connect jdbc:hive2://localhost:10000/db-name
