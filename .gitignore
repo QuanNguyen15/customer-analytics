@@ -1,0 +1,2 @@
+# Bỏ qua tất cả các file CSV trong thư mục data/
+data/*.csv

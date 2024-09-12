@@ -1,0 +1,7 @@
+Phân tích dữ liệu khách hàng
+Mục tiêu
+- Hiểu hành vi khách hàng, phân khúc thị trường, và cải thiện chiến lược tiếp thị
+Hướng dẫn: 
+- Thu thập dữ liệu khách hàng từ CRM hoặc các nền tảng thương mại điện tử
+- Sử dụng các công cụ phân tích dữ liệu như Hadoop hoặc Spark để xử lý dữ liệu lớn
+- Áp dụng các thuật toán học máy để phân tích hành vi và phân khúc khách hàng
