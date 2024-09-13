@@ -1,3 +1,99 @@
+### Cấu hình docker volume lưu trữ dữ liệu tránh trường hợp dừng container bị mất dữ liệu
+
+Để chuyển toàn bộ dữ liệu từ máy local lên Docker Volume và sử dụng volume này cho container Hive mà không bị mất dữ liệu khi container dừng, bạn có thể làm theo từng bước sau:
+
+### Bước 1: Tạo Docker Volume
+
+Docker volume giúp lưu trữ dữ liệu ngoài container, đảm bảo rằng dữ liệu không bị mất khi container bị dừng hoặc xóa.
+
+Tạo một Docker volume mới:
+
+```bash
+docker volume create hive-data
+```
+
+Lệnh này sẽ tạo một volume có tên là `hive-data`.
+
+### Bước 2: Sao chép dữ liệu từ máy local vào Docker Volume
+
+Docker không hỗ trợ trực tiếp việc sao chép dữ liệu vào volume. Tuy nhiên, bạn có thể sử dụng một container tạm thời để thực hiện việc này.
+
+Trước tiên, khởi chạy một container tạm thời để gắn volume và sao chép dữ liệu từ máy local vào volume đó:
+
+```bash
+docker run -v hive-data:/opt/hive/data --name helper-container -it busybox
+```
+
+Lệnh này sẽ chạy một container `busybox` tạm thời, gắn volume `hive-data` vào thư mục `/opt/hive/data` bên trong container.
+
+Sau đó, bạn có thể sao chép dữ liệu từ máy local vào volume bằng cách sử dụng lệnh `docker cp`. Giả sử bạn có dữ liệu ở thư mục `D:/Big_data/customer-analytics/data/`, bạn có thể thực hiện như sau:
+
+```bash
+docker cp D:/Big_data/customer-analytics/data/. helper-container:/opt/hive/data/
+```
+
+Dữ liệu từ thư mục local sẽ được sao chép vào Docker volume thông qua container tạm thời.
+
+### Bước 3: Kiểm tra dữ liệu đã sao chép vào volume
+
+Để đảm bảo dữ liệu đã được sao chép thành công, bạn có thể kiểm tra nội dung của volume bằng cách thực hiện lệnh sau trên container tạm thời:
+
+```bash
+docker exec -it helper-container ls /opt/hive/data
+```
+
+Nếu dữ liệu hiển thị đúng, bạn có thể xóa container tạm thời:
+
+```bash
+docker rm -f helper-container
+```
+
+### Bước 4: Chạy container Hive và gắn Docker Volume
+
+Bây giờ bạn có thể chạy container `hive4` và gắn volume `hive-data` mà bạn đã tạo vào. Bằng cách này, dữ liệu sẽ được lưu trữ trên volume và không bị mất khi container dừng.
+
+Chạy container `hive4` với volume đã gắn:
+
+```bash
+docker run -d -v hive-data:/opt/hive/data --name hive4 apache/hive:4.0.0
+```
+
+Lệnh này sẽ chạy container Hive và gắn volume `hive-data` vào thư mục `/opt/hive/data` của container.
+
+### Bước 5: Xác nhận dữ liệu trong container Hive
+
+Để xác nhận rằng container `hive4` có thể truy cập dữ liệu từ Docker volume, bạn có thể vào container và kiểm tra thư mục `/opt/hive/data`:
+
+```bash
+docker exec -it hive4 bash
+ls /opt/hive/data
+```
+
+Nếu dữ liệu đã được gắn thành công, bạn sẽ thấy các file mà bạn đã sao chép từ máy local.
+
+### Bước 6: Kiểm tra dữ liệu vẫn tồn tại sau khi container dừng
+
+Khi bạn dừng hoặc khởi động lại container, dữ liệu vẫn sẽ tồn tại trên Docker volume. Bạn có thể kiểm tra điều này bằng cách dừng và xóa container:
+
+```bash
+docker stop hive4
+docker rm hive4
+```
+
+Sau đó, bạn có thể khởi động lại container `hive4` và dữ liệu trong volume `hive-data` vẫn sẽ có sẵn:
+
+```bash
+ docker run -d --platform linux/amd64 -p 10000:10000 -p 10002:10002 -v hive-data:/opt/hive/data --env SERVICE_NAME=hiveserver2 --name hive4 apache/hive:4.0.0
+```
+
+Khi container được khởi động lại, dữ liệu vẫn sẽ ở trong thư mục `/opt/hive/data` vì nó được lưu trữ trên Docker volume.
+
+---
+
+Với các bước trên, bạn đã thiết lập một Docker volume cho container Hive và đảm bảo rằng dữ liệu sẽ không bị mất khi container dừng. Volume giúp lưu trữ dữ liệu độc lập với vòng đời của container, đảm bảo an toàn dữ liệu khi bạn làm việc với Docker.
+
+_________________________________________________________________________________________________________________________________
+### 4.2. Cài đặt và cấu hình Hive
 
 -b1: khởi tạo container hive4
 
@@ -19,7 +115,7 @@ kiểm tra db: show databases;
 
 
 -b5: tạo bảng ecommerce_events
-CREATE TABLE IF NOT EXISTS ecommerce_events(  event_time TIMESTAMP,  event_type STRING,  product_id BIGINT,  category_id BIGINT,  category_code STRING,  brand STRING,  price DECIMAL(10, 2),  user_id BIGINT,  user_session STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS TEXTFILE;
+CREATE TABLE IF NOT EXISTS ecommerce_events(  event_time STRING,  event_type STRING,  product_id INT,  category_id INT,  category_code STRING,  brand STRING,  price DECIMAL(10, 2),  user_id INT,  user_session STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS TEXTFILE;
 
 - b6: đẩy data từ csv vào bảng vừa tạo 
 
@@ -29,3 +125,5 @@ LOAD DATA LOCAL INPATH '/mnt/2019-Oct.csv ' INTO TABLE ecommerce_events;
 
 Quản lý kết nối và các thuộc tính kết nối 
  !connect jdbc:hive2://localhost:10000/db-name
+
+ docker run -d --platform linux/amd64 -p 10000:10000 -p 10002:10002 -v hive-data:/opt/hive/data --env SERVICE_NAME=hiveserver2 --name hive4 apache/hive:4.0.0
