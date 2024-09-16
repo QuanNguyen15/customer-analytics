@@ -69,7 +69,6 @@ Bài toán phân tích dữ liệu khách hàng yêu cầu việc thu thập, ph
 
 
 
-```markdown
 # Docker Setup Guide
 This guide will walk you through setting up a Docker environment, copying data into a Docker volume, starting containers, and cleaning up Docker resources such as containers, images, volumes, and networks.
 ## 1. Create Docker Volume
