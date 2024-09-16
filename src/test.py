@@ -26,6 +26,10 @@ def parse_event_time_and_filter(row):
 
 # List of file paths to process
 file_paths = [
+    "/opt/spark/data/2019-Oct.csv",
+    "/opt/spark/data/2019-Nov.csv",
+    "/opt/spark/data/2019-Dec.csv",
+    "/opt/spark/data/2020-Jan.csv",
     "/opt/spark/data/2020-Feb.csv",
     "/opt/spark/data/2020-Mar.csv",
     "/opt/spark/data/2020-Apr.csv"

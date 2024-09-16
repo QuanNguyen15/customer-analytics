@@ -20,12 +20,14 @@ schema = StructType() \
       .add("user_session", StringType(), True)
 
 # Load the data
-path = "opt/spark/data/2019-Nov.csv"
+# Load the data
+path = "/opt/spark/data/2019-Nov.csv"  # Adjust this to your actual file path
 df = spark.read.format("csv") \
       .option("header", True) \
       .option('delimiter', ',') \
       .schema(schema) \
       .load(path)
+
 
 # Check schema and preview data
 df.printSchema()
