@@ -26,7 +26,7 @@ def analyze_and_save(file_path, output_folder):
     # 2. Analyze price changes
     price_changes = df.groupBy('product_id').agg({'price': 'count'}).filter(col('count(price)') > 1)
     products_with_price_change = price_changes.select('product_id').rdd.flatMap(lambda x: x).collect()
-    df_price_changes = df.filter(col('product_id').isin(products_with_price_change))
+    df.filter(col('product_id').isin(products_with_price_change))
     
     # 3. Find minimum prices and associated records
     min_prices = df.groupBy('product_id').agg({'price': 'min'}).withColumnRenamed('min(price)', 'min_price')
