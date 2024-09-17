@@ -1,7 +1,6 @@
-data/*.csv
+data/
 
 .vscode
-notebooks/*.ipynb
-notebooks/setup/*.ipynb
+notebooks
 
 

@@ -3,13 +3,14 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StringType, DoubleType, TimestampType
 from pyspark.sql.functions import col, count, hour, minute, second, sum as _sum, input_file_name
 import pyspark.sql.functions as F
+import pandas as pd
 import logging
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Define the schema
+# Define the schema for the input CSV files
 schema = StructType() \
     .add("event_time", TimestampType(), True) \
     .add("event_type", StringType(), True) \
@@ -20,7 +21,7 @@ schema = StructType() \
     .add("price", DoubleType(), True) \
     .add("user_id", StringType(), True) \
     .add("user_session", StringType(), True)
-    
+
 # Function to perform analysis on a DataFrame
 def analyze_file(df):
     # 1. Distinct event types
@@ -79,6 +80,7 @@ def analyze_file(df):
         'brand_category': brand_category_df,
         'revenue': revenue_df
     }
+
 # Initialize SparkSession on the driver node
 spark = SparkSession.builder \
     .appName("ParallelCustomerAnalysis") \
@@ -95,36 +97,45 @@ file_paths = [
     "/opt/spark/data/2020-Apr.csv",
 ]
 
-# Read all files into a single DataFrame
-df = spark.read.csv(file_paths, header=True, schema=schema)
-df = df.withColumn("input_file", input_file_name())
-
-# Perform analysis on the entire DataFrame
-results = analyze_file(df)
-
-# Display and save results
-logger.info("Distinct event types across all files:")
-results['event_types'].show()
-
-logger.info("Top categories by cart-to-view ratio across all files:")
-results['category_pivot'].orderBy('cart2viewratio', ascending=False).show()
-
-logger.info("Top brands by purchase-to-view ratio across all files:")
-results['brand_purchase_view'].orderBy('purchase2viewratio', ascending=False).show()
-
-logger.info("Brand 'pixiebelles' data across all files:")
-results['brand_category'].filter(col("brand") == 'pixiebelles').orderBy('purchase2viewratio', ascending=False).show()
-
-logger.info("Top categories by revenue across all files:")
-results['revenue'].orderBy('revenue', ascending=False).show()
-
-# Save aggregated results to CSV
-output_dir = "/opt/spark/data/output_all_files"
+# Directory to store the output Excel files
+output_dir = "/tmp/customer-behaviour-output"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-results['revenue'].write.mode("overwrite").csv(f"{output_dir}/aggregated_revenue")
-logger.info(f"Aggregated results saved to {output_dir}")
+# Function to process each file and save the results
+def process_and_save_file(file_path):
+    # Read the data from the CSV file
+    df = spark.read.csv(file_path, header=True, schema=schema)
+
+    # Perform analysis on the file
+    results = analyze_file(df)
+
+    # Extract the month from the file path
+    month_name = os.path.basename(file_path).split('-')[1].split('.')[0]
+
+    # Define the Excel file path
+    excel_file_path = f"{output_dir}/purchase_analysis_{month_name}.xlsx"
+
+    # Convert Spark DataFrames to Pandas DataFrames for saving to Excel
+    event_types_df = results['event_types'].toPandas()
+    category_pivot_df = results['category_pivot'].toPandas()
+    brand_purchase_view_df = results['brand_purchase_view'].toPandas()
+    brand_category_df = results['brand_category'].toPandas()
+    revenue_df = results['revenue'].toPandas()
+
+    # Save the results into different sheets of the same Excel file
+    with pd.ExcelWriter(excel_file_path, engine='openpyxl') as writer:
+        event_types_df.to_excel(writer, sheet_name='Event Types', index=False)
+        category_pivot_df.to_excel(writer, sheet_name='Cart-to-View Ratio', index=False)
+        brand_purchase_view_df.to_excel(writer, sheet_name='Purchase-to-View Ratio', index=False)
+        brand_category_df.to_excel(writer, sheet_name='Brand-Category Analysis', index=False)
+        revenue_df.to_excel(writer, sheet_name='Revenue by Category', index=False)
+
+    logger.info(f"Results saved for {month_name} in {excel_file_path}")
+
+# Process each file individually
+for file_path in file_paths:
+    process_and_save_file(file_path)
 
 # Stop Spark session
 spark.stop()

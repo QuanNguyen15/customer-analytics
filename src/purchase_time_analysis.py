@@ -150,12 +150,12 @@ spark = SparkSession.builder \
 # List of file paths to process
 file_paths = [
     "/opt/spark/data/2019-Oct.csv",
-    "/opt/spark/data/2019-Nov.csv",
-    "/opt/spark/data/2019-Dec.csv",
-    "/opt/spark/data/2020-Jan.csv",
-    "/opt/spark/data/2020-Feb.csv",
-    "/opt/spark/data/2020-Mar.csv",
-    "/opt/spark/data/2020-Apr.csv"
+    # "/opt/spark/data/2019-Nov.csv",
+    # "/opt/spark/data/2019-Dec.csv",
+    # "/opt/spark/data/2020-Jan.csv",
+    # "/opt/spark/data/2020-Feb.csv",
+    # "/opt/spark/data/2020-Mar.csv",
+    # "/opt/spark/data/2020-Apr.csv"
 ]
 
 # Read and combine data from all files
@@ -182,8 +182,8 @@ hour_counts_df = hour_counts.toPandas()
 day_counts_df = day_counts.toPandas()
 
 # Save results to CSV files
-hour_counts_df.to_csv('/tmp/hour_counts.csv', index=False)
-day_counts_df.to_csv('/tmp/day_counts.csv', index=False)
+hour_counts_df.to_csv('/tmp/hour-counts-2019-Oct.csv', index=False)
+day_counts_df.to_csv('/tmp/day-counts-2019-Oct.csv', index=False)
 
 # Get the hour that appears most often and its count
 most_common_hour = hour_counts_df.loc[hour_counts_df['count'].idxmax()]
