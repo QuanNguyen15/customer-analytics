@@ -8,7 +8,7 @@ spark = SparkSession.builder \
     .appName("PurchaseTimeAnalysis") \
     .getOrCreate()
 
-# List of file paths to process (dữ liệu cho các tháng khác nhau)
+# List of file paths to process (data for different months)
 file_paths = [
     "/opt/spark/data/2019-Oct.csv",
     "/opt/spark/data/2019-Nov.csv",
@@ -19,12 +19,12 @@ file_paths = [
     "/opt/spark/data/2020-Apr.csv"
 ]
 
-# Directory to store the output Excel files (tạo thư mục output nếu chưa có)
+# Directory to store the output Excel files (create if not exists)
 output_dir = "/tmp/purchase_analysis_output"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-# Function to process each file and save to Excel with 2 sheets
+# Function to process each file and save results in Excel with 2 sheets
 def process_file(file_path):
     # Read the data from the CSV file
     df = spark.read.csv(file_path, header=True, inferSchema=True)
@@ -60,7 +60,7 @@ def process_file(file_path):
         hour_counts_df.to_excel(writer, sheet_name='Hourly Counts', index=False)
         day_counts_df.to_excel(writer, sheet_name='Daily Counts', index=False)
 
-    # Print to console the month processed
+    # Log to console the processed month
     print(f"Data for {month_name} saved: {excel_file_path}")
 
 # Process each file
